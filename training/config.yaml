@@ -1,0 +1,50 @@
+# Training configuration for QLoRA fine-tuning of LLaMA 3.
+# CLI flags passed to train.py override values defined here.
+
+model:
+  name: meta-llama/Meta-Llama-3-8B
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: bfloat16
+  bnb_4bit_use_double_quant: true
+  max_seq_length: 2048
+  trust_remote_code: false
+
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  lora_dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+
+data:
+  train_file: data/processed/train.jsonl
+  eval_file: data/processed/val.jsonl
+  text_field: text
+
+training:
+  output_dir: ./checkpoints
+  num_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  weight_decay: 0.0
+  max_grad_norm: 0.3
+  optim: paged_adamw_8bit
+  logging_steps: 10
+  save_steps: 200
+  eval_steps: 200
+  save_total_limit: 3
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  seed: 42
+
+tracking:
+  report_to: tensorboard   # one of: tensorboard, wandb, none
+  run_name: llama3-qlora
+  wandb_project: llm-finetune-pipeline
