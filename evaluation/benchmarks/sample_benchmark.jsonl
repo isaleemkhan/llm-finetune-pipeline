@@ -1,0 +1,5 @@
+{"instruction": "Summarize the following text in one sentence.", "input": "The mitochondria is the powerhouse of the cell. It generates most of the cell's supply of ATP, used as a source of chemical energy.", "output": "Mitochondria produce most of a cell's ATP, serving as its main energy source."}
+{"instruction": "Translate the sentence to French.", "input": "Good morning, how are you?", "output": "Bonjour, comment allez-vous ?"}
+{"instruction": "What is the capital of Japan?", "input": "", "output": "The capital of Japan is Tokyo."}
+{"instruction": "Write a Python function that returns the square of a number.", "input": "", "output": "def square(n):\n    return n * n"}
+{"instruction": "Classify the sentiment of the review as positive or negative.", "input": "The product broke after two days and support never replied.", "output": "Negative"}
