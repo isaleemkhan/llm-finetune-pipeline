@@ -1,0 +1,36 @@
+# Core
+torch>=2.1.0
+transformers>=4.40.0
+trl>=0.8.6
+peft>=0.10.0
+accelerate>=0.29.0
+bitsandbytes>=0.43.0
+datasets>=2.18.0
+
+# Config / utils
+pyyaml>=6.0
+numpy>=1.24.0
+pandas>=2.0.0
+tqdm>=4.66.0
+sentencepiece>=0.2.0
+protobuf>=4.25.0
+
+# Evaluation
+evaluate>=0.4.1
+rouge-score>=0.1.2
+sacrebleu>=2.4.0
+nltk>=3.8.1
+
+# Experiment tracking
+wandb>=0.16.0
+tensorboard>=2.16.0
+
+# Serving
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+sse-starlette>=2.0.0
+httpx>=0.27.0
+
+# Optional high-throughput backend (install separately if GPU supports it)
+# vllm>=0.4.0
