@@ -1,0 +1,77 @@
+version: "3.9"
+
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+
+services:
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: llm-finetune-pipeline:latest
+    container_name: llm-server
+    <<: *gpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${MERGED_MODEL_PATH:-./merged}:/app/merged:ro
+    environment:
+      MODEL_PATH: /app/merged
+      MAX_NEW_TOKENS: "512"
+      PORT: "8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 60s
+
+  train:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: llm-finetune-pipeline:latest
+    container_name: llm-train
+    <<: *gpu
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+      - ${CHECKPOINTS_DIR:-./checkpoints}:/app/checkpoints
+    environment:
+      WANDB_API_KEY: ${WANDB_API_KEY:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+    entrypoint: []
+    command: >
+      python training/train.py
+        --config training/config.yaml
+        --data data/processed/train.jsonl
+        --output checkpoints
+    restart: "no"
+    profiles:
+      - train
+
+  evaluate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: llm-finetune-pipeline:latest
+    container_name: llm-eval
+    <<: *gpu
+    volumes:
+      - ${CHECKPOINTS_DIR:-./checkpoints}:/app/checkpoints:ro
+      - ./evaluation:/app/evaluation
+    entrypoint: []
+    command: >
+      python evaluation/evaluate.py
+        --checkpoint checkpoints/final
+        --benchmark evaluation/benchmarks/sample_benchmark.jsonl
+    restart: "no"
+    profiles:
+      - eval
