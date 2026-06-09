@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint and Type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install lightweight deps (no torch/GPU)
+        run: |
+          pip install --upgrade pip
+          pip install pyyaml pydantic fastapi uvicorn httpx sse-starlette numpy pandas tqdm ruff
+
+      - name: Ruff lint
+        run: ruff check . --select E,F,W,I --ignore E501
+
+      - name: Import check - data pipeline
+        run: python -c "import data.prepare"
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Import check - serving client
+        run: python -c "import serving.client"
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Validate config.yaml schema
+        run: |
+          python - <<'EOF'
+          import yaml, sys
+          with open("training/config.yaml") as f:
+              cfg = yaml.safe_load(f)
+          required = {"model", "lora", "data", "training", "tracking"}
+          missing = required - set(cfg.keys())
+          if missing:
+              print(f"Missing keys: {missing}", file=sys.stderr)
+              sys.exit(1)
+          print("config.yaml OK")
+          EOF
+
+      - name: Validate benchmark format
+        run: |
+          python - <<'EOF'
+          import json, sys
+          errors = []
+          with open("evaluation/benchmarks/sample_benchmark.jsonl") as f:
+              for i, line in enumerate(f, 1):
+                  if not line.strip():
+                      continue
+                  ex = json.loads(line)
+                  for field in ("instruction", "output"):
+                      if field not in ex or not ex[field].strip():
+                          errors.append(f"Line {i}: missing '{field}'")
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
+              sys.exit(1)
+          print(f"Benchmark OK ({i} examples)")
+          EOF
